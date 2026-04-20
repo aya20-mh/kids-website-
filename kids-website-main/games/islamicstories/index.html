@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>أبطال الله الصغار</title>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;900&family=Amiri:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="container">
+        <!-- الشاشة الرئيسية -->
+        <div id="home-screen">
+            <h1>🌟 أبطال الله الصغار 🌟</h1>
+            <div class="stars-counter">
+                <span>⭐ نجومك:</span>
+                <span id="total-stars">0</span>
+            </div>
+            <p>اختر نشاطاً لتبدأ!</p>
+            
+            <div class="main-menu">
+                <button class="menu-btn stories" onclick="showSection('stories')">📖 القصص الإسلامية</button>
+                <button class="menu-btn surahs" onclick="showSection('surahs')">📜 السور القصيرة</button>
+                <button class="menu-btn athkar" onclick="showSection('athkar')">🕌 الأذكار والاستغفار</button>
+                <button class="menu-btn counter" onclick="showSection('counter')">🔢 العداد الممتع</button>
+            </div>
+        </div>
+
+        <!-- قسم القصص -->
+        <div id="stories-section" class="section hidden">
+            <h2>📖 القصص الإسلامية</h2>
+            <div class="stories-grid"></div>
+            <button class="back-btn" onclick="goHome()">🏠 العودة للرئيسية</button>
+        </div>
+
+        <!-- شاشة القصة -->
+        <div id="story-screen" class="hidden">
+            <div class="story-card">
+                <div class="story-image">
+                    <img id="story-img" src="" alt="صورة القصة">
+                </div>
+                <div class="story-text">
+                    <h2 id="story-title"></h2>
+                    <p id="story-content"></p>
+                </div>
+                <div class="controls">
+                    <button id="prev-btn" onclick="prevPage()">➡️ السابق</button>
+                    <button id="next-btn" onclick="nextPage()">التالي ⬅️</button>
+                    <button id="close-btn" onclick="goHome()">🏠 الرئيسية</button>                </div>
+            </div>
+        </div>
+
+        <!-- قسم السور القصيرة -->
+        <div id="surahs-section" class="section hidden">
+            <h2>📜 السور القصيرة</h2>
+            <div class="surahs-grid">
+                <button class="surah-btn" onclick="showSurah('alfatiha')">
+                    <span class="surah-icon">📖</span>
+                    <span class="surah-name">الفاتحة</span>
+                    <span class="surah-stars">⭐⭐⭐⭐⭐</span>
+                </button>
+                <button class="surah-btn" onclick="showSurah('ikhlas')">
+                    <span class="surah-icon">🤲</span>
+                    <span class="surah-name">الإخلاص</span>
+                    <span class="surah-stars">⭐⭐⭐⭐⭐</span>
+                </button>
+                <button class="surah-btn" onclick="showSurah('alfalaq')">
+                    <span class="surah-icon">🌅</span>
+                    <span class="surah-name">الفلق</span>
+                    <span class="surah-stars">⭐⭐⭐⭐⭐</span>
+                </button>
+                <button class="surah-btn" onclick="showSurah('alnas')">
+                    <span class="surah-icon">👥</span>
+                    <span class="surah-name">الناس</span>
+                    <span class="surah-stars">⭐⭐⭐⭐⭐</span>
+                </button>
+                <button class="surah-btn" onclick="showSurah('alkawthar')">
+                    <span class="surah-icon">🌊</span>
+                    <span class="surah-name">الكوثر</span>
+                    <span class="surah-stars">⭐⭐⭐⭐⭐</span>
+                </button>
+            </div>
+            <button class="back-btn" onclick="goHome()">🏠 العودة للرئيسية</button>
+        </div>
+
+        <!-- شاشة عرض السورة -->
+        <div id="surah-screen" class="hidden">
+            <div class="surah-card">
+                <h2 id="surah-title" class="surah-title"></h2>
+                
+                <div class="audio-player">
+                    <button class="audio-btn play" onclick="toggleAudio()">
+                        <span id="audio-icon">▶️</span>
+                        <span id="audio-text">استمع للتلاوة</span>
+                    </button>
+                    <div class="audio-controls">
+                        <button onclick="repeatAudio()" class="control-btn">🔁 تكرار</button>
+                        <button onclick="stopAudio()" class="control-btn">⏹️ إيقاف</button>                    </div>
+                    <div class="audio-progress">
+                        <div id="progress-bar" class="progress-bar"></div>
+                    </div>
+                </div>
+                
+                <div id="surah-text" class="surah-text"></div>
+                
+                <div class="surah-reward">
+                    <p>🎁 عند حفظ هذه السورة تحصل على:</p>
+                    <div class="reward-stars">⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐ (10 نجوم)</div>
+                </div>
+                
+                <button class="memorized-btn" onclick="markAsMemorized()">✅ حفظت السورة! أحسنت!</button>
+                <button class="back-btn" onclick="showSection('surahs')">🔙 العودة للسور</button>
+            </div>
+        </div>
+
+        <!-- قسم الأذكار والاستغفار -->
+        <div id="athkar-section" class="section hidden">
+            <h2>🕌 الأذكار والاستغفار</h2>
+            
+            <div class="hasanat-counter">
+                <div class="hasanat-display">
+                    <span>💎 حسناتك:</span>
+                    <span id="hasanat-count">0</span>
+                </div>
+                <div class="hasanat-info">
+                    <p>كل استغفار = 1 حسنة</p>
+                    <p>كل حسنة = 10 نجوم ⭐</p>
+                </div>
+            </div>
+            
+            <h3>📚 الأذكار اليومية</h3>
+            <div class="athkar-main-categories">
+                <button class="athkar-main-btn morning" onclick="showAthkarCategory('morning')">
+                    <span class="athkar-main-icon">🌅</span>
+                    <span class="athkar-main-title">أذكار الصباح</span>
+                    <span class="athkar-main-desc">من الفجر حتى الظهر</span>
+                </button>
+                
+                <button class="athkar-main-btn evening" onclick="showAthkarCategory('evening')">
+                    <span class="athkar-main-icon">🌆</span>
+                    <span class="athkar-main-title">أذكار المساء</span>
+                    <span class="athkar-main-desc">من الظهر حتى المغرب</span>
+                </button>
+                
+                <button class="athkar-main-btn sleep" onclick="showAthkarCategory('sleep')">
+                    <span class="athkar-main-icon">🌙</span>
+                    <span class="athkar-main-title">أذكار النوم</span>                    <span class="athkar-main-desc">قبل النوم</span>
+                </button>
+            </div>
+            
+            <h3>💫 الأذكار العامة</h3>
+            <div class="athkar-grid">
+                <div class="athkar-card">
+                    <h3>🌟 الاستغفار</h3>
+                    <p class="thikr-text">أَسْتَغْفِرُ اللهَ الْعَظِيمَ</p>
+                    <button class="thikr-btn" onclick="reciteAthkar('istighfar')">اضغط للاستغفار</button>
+                    <div class="counter-display">عدد الاستغفار: <span id="istighfar-count">0</span></div>
+                </div>
+
+                <div class="athkar-card">
+                    <h3>✨ سبحان الله</h3>
+                    <p class="thikr-text">سُبْحَانَ اللهِ</p>
+                    <button class="thikr-btn" onclick="reciteAthkar('tasbih')">اضغط للتسبيح</button>
+                    <div class="counter-display">عدد التسبيح: <span id="tasbih-count">0</span></div>
+                </div>
+
+                <div class="athkar-card">
+                    <h3>🙏 الحمد لله</h3>
+                    <p class="thikr-text">الْحَمْدُ لِلّهِ</p>
+                    <button class="thikr-btn" onclick="reciteAthkar('tahmid')">اضغط للتحميد</button>
+                    <div class="counter-display">عدد التحميد: <span id="tahmid-count">0</span></div>
+                </div>
+
+                <div class="athkar-card">
+                    <h3>💚 لا إله إلا الله</h3>
+                    <p class="thikr-text">لاَ إِلَهَ إِلاَّ اللهُ</p>
+                    <button class="thikr-btn" onclick="reciteAthkar('tahlil')">اضغط للتهليل</button>
+                    <div class="counter-display">عدد التهليل: <span id="tahlil-count">0</span></div>
+                </div>
+
+                <div class="athkar-card">
+                    <h3>🕌 الله أكبر</h3>
+                    <p class="thikr-text">اللهُ أَكْبَرُ</p>
+                    <button class="thikr-btn" onclick="reciteAthkar('takbir')">اضغط للتكبير</button>
+                    <div class="counter-display">عدد التكبير: <span id="takbir-count">0</span></div>
+                </div>
+
+                <div class="athkar-card">
+                    <h3>💪 لا حول ولا قوة</h3>
+                    <p class="thikr-text">لاَ حَوْلَ وَلاَ قُوَّةَ إِلاَّ بِاللهِ</p>
+                    <button class="thikr-btn" onclick="reciteAthkar('hawla')">اضغط هنا</button>
+                    <div class="counter-display">عدد الحوقلة: <span id="hawla-count">0</span></div>
+                </div>
+
+                <div class="athkar-card">
+                    <h3>🌹 الصلاة على النبي</h3>                    <p class="thikr-text">اللَّهُمَّ صَلِّ عَلَى مُحَمَّدٍ</p>
+                    <button class="thikr-btn" onclick="reciteAthkar('salawat')">اضغط للصلاة على النبي</button>
+                    <div class="counter-display">عدد الصلاة: <span id="salawat-count">0</span></div>
+                </div>
+            </div>
+            
+            <button class="back-btn" onclick="goHome()">🏠 العودة للرئيسية</button>
+        </div>
+
+        <!-- شاشة عرض الأذكار اليومية -->
+        <div id="athkar-list-screen" class="hidden">
+            <div class="athkar-list-container">
+                <h2 id="athkar-list-title" class="athkar-list-title"></h2>
+                
+                <div class="athkar-note">
+                    <p>💡 اضغط على كل ذكر لقرائته وكسب النجوم</p>
+                </div>
+                
+                <div id="athkar-items" class="athkar-items"></div>
+                
+                <div class="athkar-stats-box">
+                    <p>عدد الأذكار المقروءة: <span id="athkar-read-count">0</span></p>
+                    <p>النجوم المكتسبة: <span id="athkar-earned-stars">0</span> ⭐</p>
+                </div>
+                
+                <button class="back-btn" onclick="showSection('athkar')">🔙 العودة للأذكار</button>
+            </div>
+        </div>
+
+        <!-- قسم العداد -->
+        <div id="counter-section" class="section hidden">
+            <h2>🔢 العداد الممتع</h2>
+            <div class="counter-container">
+                <div class="counter-display-big">
+                    <span id="big-counter">0</span>
+                </div>
+                <button class="counter-btn" onclick="incrementCounter()">
+                    <span class="btn-icon">👆</span>
+                    <span>اضغط هنا!</span>
+                </button>
+                <button class="reset-btn" onclick="resetCounter()">🔄 تصفير العداد</button>
+            </div>
+            <button class="back-btn" onclick="goHome()">🏠 العودة للرئيسية</button>
+        </div>
+
+        <!-- شاشة المكافأة -->
+        <div id="reward-screen" class="hidden">
+            <h1>🎉 أحسنت يا بطل! 🎉</h1>
+            <p id="reward-message"></p>
+            <div class="reward-animation">⭐⭐⭐⭐⭐</div>            <button onclick="goHome()">متابعة 🌟</button>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

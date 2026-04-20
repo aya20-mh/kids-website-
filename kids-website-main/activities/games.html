@@ -1,0 +1,969 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>الألعاب والبازل - نجوم التعلم</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800&family=Fredoka:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="activity-shared.css">
+    <style>
+        :root { --hero-start: #00CEC9; --hero-end: #0984E3; }
+
+        /* === أنماط عامة === */
+        .games-menu {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .game-card {
+            background: var(--white);
+            border-radius: 22px;
+            padding: 28px 18px;
+            text-align: center;
+            box-shadow: var(--card-shadow);
+            cursor: pointer;
+            transition: var(--transition);
+            border: 3px solid transparent;
+        }
+
+        .game-card:hover {
+            transform: translateY(-8px);
+            border-color: var(--secondary-color);
+            box-shadow: 0 18px 40px rgba(0,206,201,0.2);
+        }
+
+        .game-card-icon { font-size: 3.5rem; margin-bottom: 12px; display: block; }
+        .game-card-title { font-size: 1.2rem; font-weight: 800; margin-bottom: 6px; }
+        .game-card-desc  { font-size: 0.85rem; color: var(--text-light); }
+
+        /* === إخفاء/إظهار الألعاب === */
+        #memoryGame, #guessGame, #puzzleGame, #levelSelectModal {
+            display: none;
+            animation: fadeIn 0.4s ease;
+        }
+
+        .game-header {
+            display: flex; justify-content: space-between;
+            align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;
+        }
+        .game-title { font-size: 1.4rem; font-weight: 800; }
+        .game-stats { display: flex; gap: 15px; flex-wrap: wrap; }
+        .game-stat {
+            background: var(--bg-light);
+            padding: 8px 16px; border-radius: 50px;
+            font-size: 0.9rem; font-weight: 700;
+            display: flex; align-items: center; gap: 6px;
+        }
+
+        .close-game-btn, .sound-toggle-btn {
+            background: var(--accent-pink); color: var(--white);
+            border: none; padding: 9px 20px; border-radius: 50px;
+            font-family: 'Cairo', sans-serif; font-size: 0.9rem;
+            font-weight: 700; cursor: pointer; transition: var(--transition);
+            display: flex; align-items: center; gap: 6px;
+        }
+        .sound-toggle-btn { background: var(--secondary-color); }
+        .close-game-btn:hover, .sound-toggle-btn:hover { transform: translateY(-2px); }
+
+        /* === لعبة الذاكرة === */
+        .memory-grid {
+            display: grid;
+            gap: 12px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .memory-card {
+            aspect-ratio: 1;
+            border-radius: 16px;
+            cursor: pointer;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.5s ease;
+        }
+
+        .memory-card.flipped { transform: rotateY(180deg); }
+        .memory-card.matched { cursor: default; }
+
+        .card-front, .card-back {
+            position: absolute; inset: 0;
+            border-radius: 14px;
+            display: flex; align-items: center; justify-content: center;
+            backface-visibility: hidden;
+            font-size: 2.2rem;
+        }
+
+        .card-front {
+            background: linear-gradient(135deg, var(--secondary-color), var(--accent-blue));            transform: rotateY(180deg);
+            box-shadow: 0 4px 15px rgba(0,206,201,0.3);
+        }
+
+        .card-back {
+            background: linear-gradient(135deg, #f0f4ff, #e8f0fe);
+            border: 3px solid #d0d9f0;
+            font-size: 1.8rem;
+            color: var(--primary-color);
+        }
+
+        .memory-card.matched .card-front {
+            background: linear-gradient(135deg, var(--accent-green), #38EF7D);
+            animation: matchPop 0.4s ease;
+        }
+
+        @keyframes matchPop {
+            0% { transform: rotateY(180deg) scale(1); }
+            50% { transform: rotateY(180deg) scale(1.1); }
+            100% { transform: rotateY(180deg) scale(1); }
+        }
+
+        /* === لعبة التخمين === */
+        .guess-container { text-align: center; }
+        .guess-question {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 22px; padding: 30px;
+            color: var(--white); margin-bottom: 25px;
+        }
+        .guess-emoji { font-size: 5rem; margin: 10px 0; display: block; }
+        .guess-hint  { font-size: 1.1rem; opacity: 0.9; min-height: 24px; }
+
+        .guess-options {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px; max-width: 420px; margin: 0 auto 20px;
+        }
+
+        .guess-btn {
+            padding: 16px;
+            border-radius: 16px;
+            border: 3px solid #ddd;
+            background: var(--white);
+            font-family: 'Cairo', sans-serif;
+            font-size: 1.05rem; font-weight: 700;
+            cursor: pointer; transition: var(--transition);
+        }
+        .guess-btn:hover  { border-color: var(--secondary-color); transform: translateY(-3px); }
+        .guess-btn.correct { background: #d4edda; border-color: #28a745; color: #155724; }
+        .guess-btn.wrong   { background: #f8d7da; border-color: #dc3545; color: #721c24; }
+        /* === لعبة الترتيب === */
+        .sort-container { text-align: center; }
+        .sort-title { font-size: 1.2rem; font-weight: 700; margin-bottom: 20px; }
+        .sort-question { font-size: 1rem; color: var(--text-light); margin-bottom: 20px; }
+        .sort-items { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; margin-bottom: 20px; }
+        .sort-item {
+            padding: 14px 20px;
+            border-radius: 16px;
+            background: var(--white);
+            box-shadow: var(--card-shadow);
+            cursor: grab;
+            font-size: 1.5rem;
+            border: 3px solid #ddd;
+            transition: var(--transition);
+            user-select: none;
+        }
+        .sort-item:hover { border-color: var(--secondary-color); transform: translateY(-4px); }
+        .sort-item.dragging { opacity: 0.5; cursor: grabbing; }
+        .sort-item.correct-pos { border-color: var(--accent-green); background: #f0fff8; }
+
+        .sort-answer {
+            display: flex; flex-wrap: wrap;
+            gap: 12px; justify-content: center;
+            min-height: 70px;
+            padding: 15px;
+            border: 3px dashed #ddd;
+            border-radius: 18px;
+            margin-bottom: 20px;
+            background: rgba(0,206,201,0.05);
+        }
+        .sort-answer .sort-item {
+            background: linear-gradient(135deg, #f0fff8, #e8fff4);
+            border-color: var(--accent-green);
+        }
+
+        /* === نافذة اختيار المستوى === */
+        .modal-overlay {
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.6);
+            display: flex; align-items: center; justify-content: center;
+            z-index: 1000;
+            padding: 20px;
+        }
+
+        .level-modal {
+            background: var(--white);
+            border-radius: 28px;
+            padding: 30px;
+            max-width: 500px;            width: 100%;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            animation: slideUp 0.3s ease;
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(30px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .level-modal-title {
+            font-size: 1.5rem; font-weight: 800; margin-bottom: 20px; color: var(--primary-color);
+        }
+
+        .levels-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .level-btn {
+            padding: 15px 10px;
+            border-radius: 16px;
+            border: 3px solid transparent;
+            background: var(--bg-light);
+            font-family: 'Cairo', sans-serif;
+            font-size: 0.9rem; font-weight: 700;
+            cursor: pointer; transition: var(--transition);
+            display: flex; flex-direction: column; align-items: center; gap: 6px;
+        }
+
+        .level-btn:hover { transform: translateY(-3px); border-color: var(--secondary-color); }
+        .level-btn .level-icon { font-size: 1.5rem; }
+        
+        .level-btn[data-level="easy"] { background: #d4edda; color: #155724; }
+        .level-btn[data-level="medium"] { background: #cce5ff; color: #004085; }
+        .level-btn[data-level="hard"] { background: #ffe5cc; color: #854d00; }
+        .level-btn[data-level="expert"] { background: #f8d7da; color: #721c24; }
+        .level-btn[data-level="pro"] { background: #e2d4f0; color: #4a2c66; }
+
+        .close-modal-btn {
+            background: #6c757d; color: white;
+            border: none; padding: 8px 20px; border-radius: 50px;
+            font-family: 'Cairo', sans-serif; cursor: pointer;
+        }
+
+        /* === عداد الوقت === */
+        .timer-display {            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            color: white;
+            padding: 6px 16px;
+            border-radius: 50px;
+            font-weight: 700;
+            display: none;
+        }
+        .timer-display.active { display: flex; align-items: center; gap: 6px; }
+
+        /* === Toast & Confetti === */
+        .toast {
+            position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+            background: var(--primary-color); color: white;
+            padding: 12px 24px; border-radius: 50px;
+            font-weight: 700; z-index: 2000;
+            animation: slideIn 0.3s ease, fadeOut 0.3s ease 2.8s;
+        }
+        @keyframes slideIn { from { transform: translate(-50%, 30px); opacity: 0; } to { transform: translate(-50%, 0); opacity: 1; } }
+        @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
+
+        .confetti-piece {
+            position: fixed; width: 10px; height: 20px;
+            animation: fall linear forwards;
+            pointer-events: none; z-index: 1500;
+        }
+        @keyframes fall {
+            to { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+
+<header class="top-bar">
+    <div class="container header-content">
+        <a href="../dashboard.html" class="logo">
+            <i class="fas fa-rocket"></i><span>عالم التعلم</span>
+        </a>
+        <div style="display:flex; gap:10px; align-items:center;">
+            <button class="sound-toggle-btn" onclick="toggleSound()" id="soundBtn">
+                <i class="fas fa-volume-up"></i> <span>صوت</span>
+            </button>
+            <a href="../dashboard.html" class="back-btn">
+                <i class="fas fa-arrow-right"></i><span>العودة</span>
+            </a>
+        </div>
+    </div>
+</header>
+
+<div class="page-hero">
+    <span class="hero-icon">🎮</span>    <h1>الألعاب والبازل</h1>
+    <p>العب وتعلّم في نفس الوقت!</p>
+</div>
+
+<main class="container">
+    <div class="stars-bar">
+        <i class="fas fa-trophy"></i>
+        <span>نقاطي: <strong id="totalScore">0</strong> 🏆</span>
+    </div>
+
+    <!-- قائمة الألعاب -->
+    <section class="activity-section" id="gamesMenu">
+        <h2 style="margin-bottom:20px; font-size:1.3rem;">
+            <i class="fas fa-gamepad" style="color:var(--secondary-color);"></i> اختاري لعبتك
+        </h2>
+        <div class="games-menu">
+            <div class="game-card" onclick="showLevelSelect('memory')">
+                <span class="game-card-icon">🃏</span>
+                <div class="game-card-title">لعبة الذاكرة</div>
+                <div class="game-card-desc">ابحثي عن الأزواج المتشابهة!</div>
+            </div>
+            <div class="game-card" onclick="showLevelSelect('guess')">
+                <span class="game-card-icon">🔍</span>
+                <div class="game-card-title">خمّني!</div>
+                <div class="game-card-desc">خمّني من الصورة الإيموجي!</div>
+            </div>
+            <div class="game-card" onclick="showLevelSelect('puzzle')">
+                <span class="game-card-icon">🔢</span>
+                <div class="game-card-title">رتّبي الأرقام</div>
+                <div class="game-card-desc">رتّبي الأرقام من الأصغر للأكبر!</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- لعبة الذاكرة -->
+    <section class="activity-section" id="memoryGame">
+        <div class="game-header">
+            <div class="game-title">🃏 لعبة الذاكرة</div>
+            <div class="game-stats">
+                <div class="game-stat"><i class="fas fa-redo" style="color:#0984E3;"></i> المحاولات: <strong id="attempts">0</strong></div>
+                <div class="game-stat"><i class="fas fa-check" style="color:var(--accent-green);"></i> الأزواج: <strong id="matchedPairs">0</strong>/<span id="totalPairs">8</span></div>
+                <div class="game-stat timer-display" id="memoryTimer"><i class="fas fa-clock"></i> <span id="timerValue">60</span>ث</div>
+            </div>
+            <button class="close-game-btn" onclick="closeGame('memory')">
+                <i class="fas fa-times"></i> إغلاق
+            </button>
+        </div>
+        <div class="memory-grid" id="memoryGrid"></div>
+        <div style="text-align:center; margin-top:20px;">
+            <button class="btn-primary" onclick="showLevelSelect('memory')">                <i class="fas fa-sync"></i> مستوى جديد
+            </button>
+        </div>
+    </section>
+
+    <!-- لعبة التخمين -->
+    <section class="activity-section" id="guessGame">
+        <div class="game-header">
+            <div class="game-title">🔍 خمّني!</div>
+            <div class="game-stats">
+                <div class="game-stat"><i class="fas fa-star" style="color:#FFD700;"></i> النقاط: <strong id="guessPoints">0</strong></div>
+                <div class="game-stat timer-display" id="guessTimer"><i class="fas fa-clock"></i> <span id="guessTimerValue">30</span>ث</div>
+            </div>
+            <button class="close-game-btn" onclick="closeGame('guess')">
+                <i class="fas fa-times"></i> إغلاق
+            </button>
+        </div>
+        <div class="guess-container">
+            <div class="guess-question">
+                <div class="guess-hint" id="guessHint">ما هذه؟</div>
+                <span class="guess-emoji" id="guessEmoji">🍎</span>
+            </div>
+            <div class="guess-options" id="guessOptions"></div>
+        </div>
+    </section>
+
+    <!-- لعبة الترتيب -->
+    <section class="activity-section" id="puzzleGame">
+        <div class="game-header">
+            <div class="game-title">🔢 رتّبي الأرقام</div>
+            <div class="game-stats">
+                <div class="game-stat"><i class="fas fa-star" style="color:#FFD700;"></i> النقاط: <strong id="sortScore">0</strong></div>
+                <div class="game-stat timer-display" id="sortTimer"><i class="fas fa-clock"></i> <span id="sortTimerValue">45</span>ث</div>
+            </div>
+            <button class="close-game-btn" onclick="closeGame('puzzle')">
+                <i class="fas fa-times"></i> إغلاق
+            </button>
+        </div>
+        <div class="sort-container">
+            <div class="sort-title" id="sortTitle">رتّبي الأرقام من الأصغر إلى الأكبر! 🔢</div>
+            <div class="sort-question" id="sortInstruction"></div>
+            <div class="sort-items" id="sortItems"></div>
+            <p style="color:var(--text-light); font-size:0.9rem; margin-bottom:10px;">
+                👆 اضغطي على الأرقام بالترتيب الصحيح:
+            </p>
+            <div class="sort-answer" id="sortAnswer"></div>
+            <div style="text-align:center;">
+                <button class="btn-primary" onclick="showLevelSelect('puzzle')">
+                    <i class="fas fa-sync"></i> مستوى جديد
+                </button>            </div>
+        </div>
+    </section>
+</main>
+
+<!-- نافذة اختيار المستوى -->
+<div class="modal-overlay" id="levelSelectModal">
+    <div class="level-modal">
+        <div class="level-modal-title">🎯 اختاري مستوى الصعوبة</div>
+        <div class="levels-grid">
+            <button class="level-btn" data-level="easy" onclick="startGameWithLevel('easy')">
+                <span class="level-icon">🟢</span>
+                <span>سهل</span>
+            </button>
+            <button class="level-btn" data-level="medium" onclick="startGameWithLevel('medium')">
+                <span class="level-icon">🔵</span>
+                <span>متوسط</span>
+            </button>
+            <button class="level-btn" data-level="hard" onclick="startGameWithLevel('hard')">
+                <span class="level-icon">🟠</span>
+                <span>صعب</span>
+            </button>
+            <button class="level-btn" data-level="expert" onclick="startGameWithLevel('expert')">
+                <span class="level-icon">🔴</span>
+                <span>خبير</span>
+            </button>
+            <button class="level-btn" data-level="pro" onclick="startGameWithLevel('pro')">
+                <span class="level-icon">🟣</span>
+                <span>محترف</span>
+            </button>
+        </div>
+        <button class="close-modal-btn" onclick="closeLevelModal()">إلغاء</button>
+    </div>
+</div>
+
+<footer class="page-footer"><p>صنع بحب ❤️ لتعليم أطفالنا</p></footer>
+
+<script>
+    // === متغيرات عامة ===
+    let totalScore = parseInt(localStorage.getItem('gamesScore') || '0');
+    let soundEnabled = localStorage.getItem('soundEnabled') !== 'false';
+    let currentGame = null;
+    let currentLevel = 'hard'; // الافتراضي
+    let audioCtx = null;
+
+    // === إعدادات المستويات لكل لعبة ===
+    const gameLevels = {
+        memory: {
+            easy:   { pairs: 2, cols: 2, time: null, points: 5 },
+            medium: { pairs: 4, cols: 4, time: null, points: 10 },            hard:   { pairs: 6, cols: 4, time: null, points: 15 },
+            expert: { pairs: 8, cols: 4, time: 90, points: 25 },
+            pro:    { pairs: 10, cols: 5, time: 120, points: 40 }
+        },
+        guess: {
+            easy:   { options: 2, hint: true, time: null, points: 3 },
+            medium: { options: 3, hint: 'partial', time: null, points: 5 },
+            hard:   { options: 4, hint: false, time: null, points: 8 },
+            expert: { options: 5, hint: false, time: 20, points: 12 },
+            pro:    { options: 6, hint: false, time: 15, points: 20 }
+        },
+        puzzle: {
+            easy:   { count: 3, range: [1,10], reverse: false, time: null, points: 5 },
+            medium: { count: 4, range: [1,15], reverse: false, time: null, points: 10 },
+            hard:   { count: 5, range: [1,20], reverse: false, time: null, points: 15 },
+            expert: { count: 6, range: [1,30], reverse: false, time: 40, points: 25 },
+            pro:    { count: 8, range: [1,50], reverse: true, time: 60, points: 40 }
+        }
+    };
+
+    // === نظام الصوت باستخدام Web Audio API ===
+    function initAudio() {
+        if (!audioCtx) {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (audioCtx.state === 'suspended') {
+            audioCtx.resume();
+        }
+    }
+
+    function playTone(frequency, duration, type = 'sine', volume = 0.1) {
+        if (!soundEnabled) return;
+        initAudio();
+        const oscillator = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+        
+        oscillator.frequency.value = frequency;
+        oscillator.type = type;
+        gainNode.gain.setValueAtTime(volume, audioCtx.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+        
+        oscillator.start(audioCtx.currentTime);
+        oscillator.stop(audioCtx.currentTime + duration);
+    }
+
+    // أصوات مخصصة للأحداث
+    const sounds = {        flip: () => playTone(400, 0.1, 'square', 0.05),
+        match: () => { playTone(523, 0.15); setTimeout(() => playTone(659, 0.15), 100); setTimeout(() => playTone(784, 0.2), 200); },
+        error: () => { playTone(200, 0.2, 'sawtooth', 0.08); setTimeout(() => playTone(150, 0.2, 'sawtooth', 0.08), 100); },
+        correct: () => { playTone(600, 0.1); setTimeout(() => playTone(800, 0.15), 80); setTimeout(() => playTone(1000, 0.2), 160); },
+        win: () => { 
+            [400, 500, 600, 800, 1000].forEach((freq, i) => 
+                setTimeout(() => playTone(freq, 0.15, 'sine', 0.12), i * 100)
+            );
+        },
+        click: () => playTone(300, 0.05, 'triangle', 0.03),
+        tick: () => playTone(800, 0.03, 'sine', 0.02)
+    };
+
+    function toggleSound() {
+        soundEnabled = !soundEnabled;
+        localStorage.setItem('soundEnabled', soundEnabled);
+        const btn = document.getElementById('soundBtn');
+        btn.innerHTML = soundEnabled ? 
+            '<i class="fas fa-volume-up"></i> <span>صوت</span>' : 
+            '<i class="fas fa-volume-mute"></i> <span>صامت</span>';
+        if (soundEnabled) initAudio();
+    }
+
+    // === التنقل بين الألعاب ===
+    function showLevelSelect(gameType) {
+        currentGame = gameType;
+        // استعادة آخر مستوى تم اختياره لهذه اللعبة
+        const savedLevel = localStorage.getItem(`level_${gameType}`);
+        if (savedLevel) currentLevel = savedLevel;
+        
+        // تمييز المستوى المحفوظ
+        document.querySelectorAll('.level-btn').forEach(btn => {
+            btn.style.borderColor = btn.dataset.level === currentLevel ? 'var(--secondary-color)' : 'transparent';
+        });
+        
+        document.getElementById('levelSelectModal').style.display = 'flex';
+        sounds.click();
+    }
+
+    function closeLevelModal() {
+        document.getElementById('levelSelectModal').style.display = 'none';
+        sounds.click();
+    }
+
+    function startGameWithLevel(level) {
+        currentLevel = level;
+        localStorage.setItem(`level_${currentGame}`, level);
+        closeLevelModal();
+        sounds.click();
+                document.getElementById('gamesMenu').style.display = 'none';
+        ['memoryGame', 'guessGame', 'puzzleGame'].forEach(id => 
+            document.getElementById(id).style.display = 'none'
+        );
+
+        if (currentGame === 'memory') {
+            document.getElementById('memoryGame').style.display = 'block';
+            initMemoryGame();
+        } else if (currentGame === 'guess') {
+            document.getElementById('guessGame').style.display = 'block';
+            guessScore = 0;
+            document.getElementById('guessPoints').textContent = 0;
+            initGuessGame();
+        } else if (currentGame === 'puzzle') {
+            document.getElementById('puzzleGame').style.display = 'block';
+            sortScoreLocal = 0;
+            document.getElementById('sortScore').textContent = 0;
+            initSortGame();
+        }
+    }
+
+    function closeGame(type) {
+        // إيقاف أي مؤقتات نشطة
+        if (memoryTimerInterval) clearInterval(memoryTimerInterval);
+        if (guessTimerInterval) clearInterval(guessTimerInterval);
+        if (sortTimerInterval) clearInterval(sortTimerInterval);
+        
+        document.getElementById('gamesMenu').style.display = 'block';
+        document.getElementById(type + 'Game').style.display = 'none';
+        sounds.click();
+    }
+
+    // === لعبة الذاكرة ===
+    const memoryEmojis = ['🍎','🐱','🌸','🦋','⭐','🎈','🌈','🏆','🎨','🚀'];
+    let flippedCards = [], matchedCount = 0, attempts = 0, canFlip = true;
+    let memoryTimerInterval = null, memoryTimeLeft = 0;
+
+    function initMemoryGame() {
+        const config = gameLevels.memory[currentLevel];
+        const pairs = memoryEmojis.slice(0, config.pairs);
+        const cards = [...pairs, ...pairs].sort(() => Math.random() - 0.5);
+        
+        matchedCount = 0; attempts = 0; flippedCards = []; canFlip = true;
+        document.getElementById('matchedPairs').textContent = 0;
+        document.getElementById('attempts').textContent = 0;
+        document.getElementById('totalPairs').textContent = config.pairs;
+
+        // إعداد الشبكة حسب المستوى
+        const grid = document.getElementById('memoryGrid');
+        grid.innerHTML = '';        grid.style.gridTemplateColumns = `repeat(${config.cols}, 1fr)`;
+        
+        // حجم الخط يتناسب مع عدد الأعمدة
+        const fontSize = config.cols > 4 ? '1.5rem' : config.cols > 3 ? '1.8rem' : '2.2rem';
+
+        cards.forEach((emoji, i) => {
+            const card = document.createElement('div');
+            card.className = 'memory-card';
+            card.dataset.emoji = emoji;
+            card.innerHTML = `
+                <div class="card-back"><i class="fas fa-question"></i></div>
+                <div class="card-front" style="font-size:${fontSize}">${emoji}</div>
+            `;
+            card.onclick = () => flipMemoryCard(card);
+            grid.appendChild(card);
+        });
+
+        // إعداد المؤقت إذا موجود
+        const timerEl = document.getElementById('memoryTimer');
+        if (config.time) {
+            memoryTimeLeft = config.time;
+            document.getElementById('timerValue').textContent = memoryTimeLeft;
+            timerEl.classList.add('active');
+            if (memoryTimerInterval) clearInterval(memoryTimerInterval);
+            memoryTimerInterval = setInterval(() => {
+                memoryTimeLeft--;
+                document.getElementById('timerValue').textContent = memoryTimeLeft;
+                if (memoryTimeLeft <= 10) sounds.tick();
+                if (memoryTimeLeft <= 0) {
+                    clearInterval(memoryTimerInterval);
+                    endMemoryGame(false);
+                }
+            }, 1000);
+        } else {
+            timerEl.classList.remove('active');
+        }
+    }
+
+    function flipMemoryCard(card) {
+        if (!canFlip || card.classList.contains('flipped') || card.classList.contains('matched')) return;
+        card.classList.add('flipped');
+        flippedCards.push(card);
+        sounds.flip();
+        
+        if (flippedCards.length === 2) {
+            attempts++;
+            document.getElementById('attempts').textContent = attempts;
+            canFlip = false;
+            setTimeout(() => checkMemoryMatch(), 800);
+        }    }
+
+    function checkMemoryMatch() {
+        const [a, b] = flippedCards;
+        if (a.dataset.emoji === b.dataset.emoji) {
+            a.classList.add('matched'); b.classList.add('matched');
+            matchedCount++;
+            document.getElementById('matchedPairs').textContent = matchedCount;
+            sounds.match();
+            const points = gameLevels.memory[currentLevel].points;
+            addScore(points);
+            
+            const config = gameLevels.memory[currentLevel];
+            if (matchedCount === config.pairs) {
+                endMemoryGame(true);
+            }
+        } else {
+            sounds.error();
+            a.classList.remove('flipped'); b.classList.remove('flipped');
+        }
+        flippedCards = []; canFlip = true;
+    }
+
+    function endMemoryGame(won) {
+        if (memoryTimerInterval) clearInterval(memoryTimerInterval);
+        if (won) {
+            const bonus = currentLevel === 'pro' ? 100 : currentLevel === 'expert' ? 75 : 50;
+            addScore(bonus);
+            showToast(`🎉 ممتاز! أكملتِ المستوى في ${attempts} محاولة! +${bonus} نقطة!`);
+            sounds.win();
+            createConfetti();
+        } else {
+            showToast('⏰ انتهى الوقت! حاولي مرة أخرى 💪');
+            sounds.error();
+        }
+    }
+
+    // === لعبة التخمين ===
+    const guessData = [
+        { emoji: '🍎', answer: 'تفاحة', options: ['تفاحة','موزة','برتقال','عنب'], hint: 'فاكهة حمراء' },
+        { emoji: '🦁', answer: 'أسد',   options: ['نمر','أسد','فيل','زرافة'], hint: 'ملك الغابة' },
+        { emoji: '🚀', answer: 'صاروخ', options: ['طائرة','قطار','صاروخ','سيارة'], hint: 'يسافر للفضاء' },
+        { emoji: '🌈', answer: 'قوس قزح', options: ['شمس','قمر','قوس قزح','نجمة'], hint: 'يظهر بعد المطر' },
+        { emoji: '🐧', answer: 'بطريق', options: ['دجاجة','بطريق','بطة','حمامة'], hint: 'يعيش في القطب' },
+        { emoji: '🎸', answer: 'جيتار',  options: ['بيانو','طبل','جيتار','كمان'], hint: 'آلة موسيقية' },
+        { emoji: '🌺', answer: 'زهرة',   options: ['شجرة','عشب','زهرة','نبتة'], hint: 'لها رائحة عطرة' },
+        { emoji: '⭐', answer: 'نجمة',   options: ['قمر','نجمة','شمس','كوكب'], hint: 'تلمع في الليل' },
+        { emoji: '🐘', answer: 'فيل', options: ['أسد','فيل','زرافة','نمر'], hint: 'له خرطوم طويل' },
+        { emoji: '🦋', answer: 'فراشة', options: ['نحلة','فراشة','عصفور','خنفساء'], hint: 'لها أجنحة ملونة' },
+    ];    
+    let guessIndex = 0, guessScore = 0, canGuess = true;
+    let guessTimerInterval = null, guessTimeLeft = 0;
+
+    function initGuessGame() {
+        const config = gameLevels.guess[currentLevel];
+        guessIndex = Math.floor(Math.random() * guessData.length);
+        canGuess = true;
+        
+        const q = guessData[guessIndex];
+        document.getElementById('guessEmoji').textContent = q.emoji;
+        
+        // عرض التلميح حسب المستوى
+        const hintEl = document.getElementById('guessHint');
+        if (config.hint === true) {
+            hintEl.textContent = `💡 تلميح: ${q.hint}`;
+        } else if (config.hint === 'partial') {
+            hintEl.textContent = `💡 أول حرف: ${q.answer.charAt(0)}`;
+        } else {
+            hintEl.textContent = 'ما هذه؟ اختاري الإجابة الصحيحة!';
+        }
+        
+        // اختيار عدد الخيارات حسب المستوى
+        const availableOptions = [...q.options];
+        const selectedOptions = availableOptions
+            .sort(() => Math.random() - 0.5)
+            .slice(0, Math.min(config.options, availableOptions.length));
+        
+        const container = document.getElementById('guessOptions');
+        container.innerHTML = '';
+        selectedOptions.forEach(opt => {
+            const btn = document.createElement('button');
+            btn.className = 'guess-btn';
+            btn.textContent = opt;
+            btn.onclick = () => checkGuess(opt, btn, q.answer);
+            container.appendChild(btn);
+        });
+        
+        // إعداد المؤقت
+        const timerEl = document.getElementById('guessTimer');
+        if (config.time) {
+            guessTimeLeft = config.time;
+            document.getElementById('guessTimerValue').textContent = guessTimeLeft;
+            timerEl.classList.add('active');
+            if (guessTimerInterval) clearInterval(guessTimerInterval);
+            guessTimerInterval = setInterval(() => {
+                guessTimeLeft--;
+                document.getElementById('guessTimerValue').textContent = guessTimeLeft;
+                if (guessTimeLeft <= 5) sounds.tick();
+                if (guessTimeLeft <= 0) {                    clearInterval(guessTimerInterval);
+                    handleGuessTimeout();
+                }
+            }, 1000);
+        } else {
+            timerEl.classList.remove('active');
+        }
+    }
+
+    function checkGuess(selected, btn, correct) {
+        if (!canGuess) return;
+        canGuess = false;
+        
+        if (guessTimerInterval) clearInterval(guessTimerInterval);
+        
+        if (selected === correct) {
+            btn.classList.add('correct');
+            sounds.correct();
+            const points = gameLevels.guess[currentLevel].points;
+            guessScore += points; 
+            addScore(points);
+            document.getElementById('guessPoints').textContent = guessScore;
+            showToast(`✅ صحيح! +${points} نقاط 🎉`);
+            createConfetti();
+        } else {
+            btn.classList.add('wrong');
+            sounds.error();
+            document.querySelectorAll('.guess-btn').forEach(b => { 
+                if (b.textContent === correct) b.classList.add('correct'); 
+            });
+            showToast('❌ ليس صحيحاً! الجواب: ' + correct);
+        }
+        setTimeout(initGuessGame, 2000);
+    }
+
+    function handleGuessTimeout() {
+        canGuess = false;
+        showToast('⏰ انتهى الوقت!');
+        sounds.error();
+        document.querySelectorAll('.guess-btn').forEach(b => {
+            if (b.textContent === guessData[guessIndex].answer) b.classList.add('correct');
+        });
+        setTimeout(initGuessGame, 2000);
+    }
+
+    // === لعبة الترتيب ===
+    let sortCorrect = [], sortScoreLocal = 0, selectedSortItems = [];
+    let sortTimerInterval = null, sortTimeLeft = 0;
+
+    function initSortGame() {        const config = gameLevels.puzzle[currentLevel];
+        const count = config.count;
+        const [min, max] = config.range;
+        
+        // توليد أرقام فريدة
+        const nums = [];
+        while (nums.length < count) {
+            const n = Math.floor(Math.random() * (max - min + 1)) + min;
+            if (!nums.includes(n)) nums.push(n);
+        }
+        
+        sortCorrect = config.reverse ? [...nums].sort((a, b) => b - a) : [...nums].sort((a, b) => a - b);
+        selectedSortItems = [];
+
+        const instruction = config.reverse ? 
+            `لديكِ ${count} أرقام، رتّبيها من الأكبر إلى الأصغر 🔽` :
+            `لديكِ ${count} أرقام، رتّبيها من الأصغر إلى الأكبر 🔼`;
+        
+        document.getElementById('sortInstruction').textContent = instruction;
+        document.getElementById('sortTitle').textContent = config.reverse ? 
+            'رتّبي الأرقام من الأكبر إلى الأصغر! 🔽' : 
+            'رتّبي الأرقام من الأصغر إلى الأكبر! 🔢';
+        document.getElementById('sortAnswer').innerHTML = '';
+
+        const shuffled = [...nums].sort(() => Math.random() - 0.5);
+        const container = document.getElementById('sortItems');
+        container.innerHTML = '';
+        shuffled.forEach(n => {
+            const item = document.createElement('div');
+            item.className = 'sort-item';
+            item.textContent = n;
+            item.dataset.value = n;
+            item.onclick = () => selectSortItem(item);
+            container.appendChild(item);
+        });
+
+        // إعداد المؤقت
+        const timerEl = document.getElementById('sortTimer');
+        if (config.time) {
+            sortTimeLeft = config.time;
+            document.getElementById('sortTimerValue').textContent = sortTimeLeft;
+            timerEl.classList.add('active');
+            if (sortTimerInterval) clearInterval(sortTimerInterval);
+            sortTimerInterval = setInterval(() => {
+                sortTimeLeft--;
+                document.getElementById('sortTimerValue').textContent = sortTimeLeft;
+                if (sortTimeLeft <= 10) sounds.tick();
+                if (sortTimeLeft <= 0) {
+                    clearInterval(sortTimerInterval);
+                    handleSortTimeout();                }
+            }, 1000);
+        } else {
+            timerEl.classList.remove('active');
+        }
+    }
+
+    function selectSortItem(item) {
+        if (item.style.visibility === 'hidden' || !canGuess) return;
+        
+        const val = parseInt(item.dataset.value);
+        selectedSortItems.push(val);
+        item.style.visibility = 'hidden';
+        sounds.flip();
+
+        const answerDiv = document.getElementById('sortAnswer');
+        const chip = document.createElement('div');
+        chip.className = 'sort-item';
+        chip.textContent = val;
+        answerDiv.appendChild(chip);
+
+        // تحقق فوري من الترتيب
+        const expectedPos = selectedSortItems.length - 1;
+        if (val !== sortCorrect[expectedPos]) {
+            chip.style.background = '#f8d7da';
+            chip.style.borderColor = '#dc3545';
+            sounds.error();
+            showToast('❌ ترتيب خاطئ! جرّبي مرة أخرى 🔄');
+            setTimeout(() => { 
+                selectedSortItems = []; 
+                answerDiv.innerHTML = '';
+                document.querySelectorAll('.sort-item').forEach(i => i.style.visibility = 'visible');
+            }, 1200);
+            return;
+        }
+
+        chip.style.background = '#d4edda';
+        chip.style.borderColor = '#28a745';
+
+        if (selectedSortItems.length === sortCorrect.length) {
+            if (sortTimerInterval) clearInterval(sortTimerInterval);
+            sounds.win();
+            const points = gameLevels.puzzle[currentLevel].points;
+            sortScoreLocal += points; 
+            addScore(points);
+            document.getElementById('sortScore').textContent = sortScoreLocal;
+            showToast(`🎉 رائع جداً! +${points} نقطة ⭐`);
+            createConfetti();
+            setTimeout(initSortGame, 2500);
+        }    }
+
+    function handleSortTimeout() {
+        showToast('⏰ انتهى الوقت! حاولي مرة أخرى 💪');
+        sounds.error();
+        setTimeout(initSortGame, 2000);
+    }
+
+    // === نظام النقاط ===
+    function addScore(n) {
+        totalScore += n;
+        document.getElementById('totalScore').textContent = totalScore;
+        localStorage.setItem('gamesScore', totalScore);
+        
+        const starsEarned = Math.floor(n / 5);
+        if (starsEarned > 0) {
+            try {
+                const session = JSON.parse(localStorage.getItem('kidsAppSession') || 'null');
+                if (session?.type === 'child') {
+                    const accounts = JSON.parse(localStorage.getItem('kidsAppAccounts') || 'null');
+                    if (accounts) {
+                        const idx = accounts.children?.findIndex?.(c => c.id === session.id);
+                        if (idx !== -1) {
+                            accounts.children[idx].stars = (accounts.children[idx].stars || 0) + starsEarned;
+                            localStorage.setItem('kidsAppAccounts', JSON.stringify(accounts));
+                        }
+                    }
+                }
+            } catch(e) {}
+        }
+    }
+
+    // === Toast & Confetti ===
+    function showToast(msg) {
+        document.querySelector('.toast')?.remove();
+        const t = document.createElement('div'); 
+        t.className = 'toast'; 
+        t.textContent = msg;
+        document.body.appendChild(t); 
+        setTimeout(() => t.remove(), 3100);
+    }
+
+    function createConfetti() {
+        for (let i = 0; i < 30; i++) {
+            setTimeout(() => {
+                const c = document.createElement('div'); 
+                c.className = 'confetti-piece'; 
+                c.style.left = Math.random() * 100 + 'vw'; 
+                c.style.top = '-10px';
+                c.style.background = `hsl(${Math.random() * 360}, 70%, 60%)`;                c.style.width = (5 + Math.random() * 10) + 'px';
+                c.style.height = (10 + Math.random() * 15) + 'px';
+                c.style.animationDuration = (2 + Math.random() * 2) + 's';
+                document.body.appendChild(c); 
+                setTimeout(() => c.remove(), 4000);
+            }, i * 50);
+        }
+    }
+
+    // === التهيئة عند التحميل ===
+    document.addEventListener('DOMContentLoaded', () => {
+        // التحقق من الجلسة
+        try {
+            const session = JSON.parse(localStorage.getItem('kidsAppSession') || 'null');
+            if (!session || session.type !== 'child') { 
+                // location.href = '../login.html'; // إلغاء التوجيه للتجربة
+            }
+        } catch(e) {}
+        
+        document.getElementById('totalScore').textContent = totalScore;
+        
+        // تحديث زر الصوت
+        const soundBtn = document.getElementById('soundBtn');
+        if (!soundEnabled) {
+            soundBtn.innerHTML = '<i class="fas fa-volume-mute"></i> <span>صامت</span>';
+        }
+        
+        // تهيئة الصوت عند أول تفاعل
+        document.addEventListener('click', initAudio, { once: true });
+    });
+
+    // إغلاق النافذة المنبثقة عند النقر خارجها
+    document.getElementById('levelSelectModal')?.addEventListener('click', (e) => {
+        if (e.target.id === 'levelSelectModal') closeLevelModal();
+    });
+</script>
+</body>
+</html>

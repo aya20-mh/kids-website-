@@ -1,0 +1,338 @@
+><!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>لعبة مطابقة الظل - مشروع تخرج</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-tap-highlight-color: transparent; }
+    body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f4f7f6; padding: 20px; direction: rtl; min-height: 100vh; }
+    .container { max-width: 900px; margin: 0 auto; background: #fff; padding: 25px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); text-align: center; }
+    h1 { color: #2d3436; margin-bottom: 20px; font-size: 2.2rem; }
+    
+    /* أزرار */
+    .btn { padding: 12px 25px; border: none; border-radius: 10px; cursor: pointer; font-size: 1rem; font-weight: bold; transition: 0.2s; margin: 5px; }
+    .btn-primary { background: #6c5ce7; color: #fff; }
+    .btn-primary:hover { background: #5649c0; transform: translateY(-2px); }
+    .btn-secondary { background: #b2bec3; color: #fff; }
+    .btn-next { background: #00b894; color: #fff; animation: pop 0.5s; }
+    
+    /* الشاشات */
+    #menu, #game { transition: 0.3s; }
+    #game { display: none; }
+    
+    /* المؤقت */
+    .timer-bar { width: 100%; height: 10px; background: #dfe6e9; border-radius: 5px; margin-bottom: 15px; overflow: hidden; display: none; }
+    .timer-fill { height: 100%; background: #ff7675; width: 100%; transition: width 1s linear; }
+    
+    /* الرسائل */
+    .message { font-size: 1.2rem; font-weight: bold; min-height: 35px; margin-bottom: 15px; color: #6c5ce7; }
+    .message.error { color: #ff7675; }
+    .message.success { color: #00b894; }
+    
+    /* شبكة الظلال */
+    .targets-grid { display: flex; flex-wrap: wrap; justify-content: center; gap: 15px; margin-bottom: 30px; padding: 20px; background: #f8f9fa; border-radius: 15px; min-height: 120px; }
+    .target-box { width: 90px; height: 90px; border: 3px dashed #b2bec3; border-radius: 12px; display: flex; align-items: center; justify-content: center; background: #fff; transition: 0.3s; position: relative; }
+    .target-box svg { width: 60%; height: 60%; fill: #b2bec3; transition: 0.3s; }
+    .target-box.matched { border-color: #00b894; background: #d4edda; border-style: solid; transform: scale(1.05); }
+    .target-box.matched svg { fill: #00b894; opacity: 1; }
+    .target-box.wrong { border-color: #ff7675; background: #ffebee; animation: shake 0.4s; }
+    
+    /* الأشكال الملونة */
+    .shapes-area { display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; min-height: 100px; padding: 20px; background: #fff; }
+    .draggable { width: 80px; height: 80px; cursor: grab; display: flex; align-items: center; justify-content: center; transition: transform 0.1s; }
+    .draggable:active { cursor: grabbing; transform: scale(1.1); }
+    .draggable svg { width: 100%; height: 100%; filter: drop-shadow(2px 4px 5px rgba(0,0,0,0.2)); pointer-events: none; }
+    .draggable.hidden { opacity: 0; pointer-events: none; transform: scale(0); }
+    
+    /* النسخة المتحركة */
+    .dragging-clone { position: fixed; pointer-events: none; z-index: 1000; opacity: 0.9; transform: scale(1.2); filter: drop-shadow(5px 10px 10px rgba(0,0,0,0.3)); }
+        /* الكونفيتي */
+    .confetti { position: fixed; width: 10px; height: 10px; border-radius: 2px; animation: fall 2s linear forwards; z-index: 9999; pointer-events: none; }
+    
+    @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-5px)} 75%{transform:translateX(5px)} }
+    @keyframes pop { 0%{transform:scale(0.8)} 50%{transform:scale(1.2)} 100%{transform:scale(1)} }
+    @keyframes fall { to{transform:translateY(100vh) rotate(720deg);opacity:0} }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h1>🎨 لعبة مطابقة الظل</h1>
+  
+  <!-- القائمة -->
+  <div id="menu">
+    <h2>اختاري المرحلة</h2>
+    <div style="margin-top:20px; display:flex; flex-wrap:wrap; justify-content:center;">
+      <button class="btn btn-primary" onclick="startGame(1)">المرحلة 1 (4 أشكال)</button>
+      <button class="btn btn-primary" onclick="startGame(2)">المرحلة 2 (6 أشكال)</button>
+      <button class="btn btn-primary" onclick="startGame(3)">المرحلة 3 (8 أشكال)</button>
+      <button class="btn btn-primary" onclick="startGame(4)">المرحلة 4 (10 أشكال)</button>
+      <button class="btn btn-primary" onclick="startGame(5)">المرحلة 5 (12 شكل)</button>
+      <button class="btn btn-primary" onclick="startGame(6)">المرحلة 6 (12 شكل - مع وقت!)</button>
+    </div>
+  </div>
+
+  <!-- اللعب -->
+  <div id="game">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+      <button class="btn btn-secondary" onclick="backToMenu()">↩️ القائمة</button>
+      <h3 id="levelTitle" style="color:#2d3436;"></h3>
+      <div id="nextBtnContainer" style="display:none;">
+        <button class="btn btn-next" onclick="nextLevel()">المرحلة التالية ️</button>
+      </div>
+    </div>
+    
+    <div class="timer-bar" id="timerBar"><div class="timer-fill" id="timerFill"></div></div>
+    <div class="message" id="message">اسحب كل شكل ولونه فوق ظله الرمادي</div>
+    
+    <div class="targets-grid" id="targets"></div>
+    <div class="shapes-area" id="shapes"></div>
+  </div>
+</div>
+
+<script>
+  // بيانات الأشكال
+  const shapesData = [
+    {id:'heart', path:'M50 85 C20 60 10 35 30 35 C38 35 45 42 50 42 C55 42 62 35 70 35 C90 35 80 60 50 85 Z'},
+    {id:'rect', path:'M15 25 h70 v50 h-70 z', rx:5},
+    {id:'square', path:'M15 15 h70 v70 h-70 z', rx:5},    {id:'circle', path:'M50 20 a30 30 0 1 0 0.1 0 z'},
+    {id:'triangle', path:'M50 15 L85 80 L15 80 Z'},
+    {id:'star', path:'M50 15 L61 35 L85 35 L66 50 L73 75 L50 60 L27 75 L34 50 L15 35 L39 35 Z'},
+    {id:'diamond', path:'M50 15 L85 50 L50 85 L15 50 Z'},
+    {id:'cloud', path:'M25 65 A15 15 0 0 1 25 35 A20 20 0 0 1 55 35 A15 15 0 0 1 75 65 Z'},
+    {id:'moon', path:'M30 15 A35 35 0 1 0 65 75 A25 25 0 0 1 30 15 Z'},
+    {id:'oval', path:'M50 30 A35 20 0 1 0 50 70 A35 20 0 1 0 50 30 z'},
+    {id:'capsule', path:'M35 15 h30 a20 20 0 0 1 0 70 h-30 a20 20 0 0 1 0 -70 z'},
+    {id:'hexagon', path:'M50 15 L80 32 L80 68 L50 85 L20 68 L20 32 Z'}
+  ];
+  
+  const colors = ['#e74c3c','#3498db','#2ecc71','#f1c40f','#9b59b6','#e67e22','#1abc9c','#34495e','#d35400','#7f8c8d','#ff7675','#74b9ff'];
+  
+  let currentLevel = 1;
+  let matchedCount = 0;
+  let totalShapes = 0;
+  let activeDrag = null;
+  let dragClone = null;
+  let offsetX, offsetY;
+  let timerInterval = null;
+  let timeLeft = 0;
+
+  // نظام الصوت
+  const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  function playSound(type) {
+    if(audioCtx.state === 'suspended') audioCtx.resume();
+    const o = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    o.connect(g); g.connect(audioCtx.destination);
+    const now = audioCtx.currentTime;
+    
+    if(type === 'correct') {
+      o.frequency.setValueAtTime(523, now);
+      o.frequency.exponentialRampToValueAtTime(784, now + 0.1);
+      g.gain.setValueAtTime(0.3, now);
+      g.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+      o.start(now); o.stop(now + 0.3);
+    } else if(type === 'wrong') {
+      o.type = 'sawtooth';
+      o.frequency.setValueAtTime(150, now);
+      g.gain.setValueAtTime(0.2, now);
+      g.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+      o.start(now); o.stop(now + 0.3);
+    } else if(type === 'win') {
+      [523, 659, 784, 1047].forEach((f, i) => {
+        const o2 = audioCtx.createOscillator();
+        const g2 = audioCtx.createGain();
+        o2.connect(g2); g2.connect(audioCtx.destination);
+        o2.frequency.value = f;
+        g2.gain.setValueAtTime(0.2, now + i*0.15);        g2.gain.exponentialRampToValueAtTime(0.01, now + i*0.15 + 0.4);
+        o2.start(now + i*0.15); o2.stop(now + i*0.15 + 0.4);
+      });
+    }
+  }
+
+  function startGame(level) {
+    currentLevel = level;
+    clearInterval(timerInterval);
+    document.getElementById('menu').style.display = 'none';
+    document.getElementById('game').style.display = 'block';
+    document.getElementById('levelTitle').textContent = 'المرحلة ' + level;
+    document.getElementById('message').textContent = 'اسحب كل شكل ولونه فوق ظله الرمادي';
+    document.getElementById('message').className = 'message';
+    document.getElementById('nextBtnContainer').style.display = 'none';
+    
+    const timerBar = document.getElementById('timerBar');
+    timerBar.style.display = level === 6 ? 'block' : 'none';
+    
+    let count = level <= 3 ? (level===1?4:level===2?6:8) : (level===4?10:12);
+    setupBoard(count);
+    
+    if(level === 6) {
+      timeLeft = 90;
+      updateTimerBar();
+      timerInterval = setInterval(() => {
+        timeLeft--;
+        updateTimerBar();
+        if(timeLeft <= 0) {
+          clearInterval(timerInterval);
+          document.getElementById('message').textContent = '⏰ انتهى الوقت! حاولي مرة أخرى';
+          document.getElementById('message').className = 'message error';
+          playSound('wrong');
+          setTimeout(() => startGame(6), 2000);
+        }
+      }, 1000);
+    }
+  }
+
+  function updateTimerBar() {
+    document.getElementById('timerFill').style.width = (timeLeft/90*100) + '%';
+  }
+
+  function setupBoard(count) {
+    const targetsDiv = document.getElementById('targets');
+    const shapesDiv = document.getElementById('shapes');
+    targetsDiv.innerHTML = ''; shapesDiv.innerHTML = '';
+    matchedCount = 0; totalShapes = count;
+    
+    const selected = [...shapesData].sort(()=>Math.random()-0.5).slice(0, count);    
+    selected.forEach(shape => {
+      const box = document.createElement('div');
+      box.className = 'target-box';
+      box.dataset.id = shape.id;
+      box.innerHTML = `<svg viewBox="0 0 100 100"><path d="${shape.path}" ${shape.rx?`rx="${shape.rx}" ry="${shape.rx}"`:''} /></svg>`;
+      targetsDiv.appendChild(box);
+    });
+    
+    selected.sort(()=>Math.random()-0.5).forEach((shape, idx) => {
+      const el = document.createElement('div');
+      el.className = 'draggable';
+      el.dataset.id = shape.id;
+      el.dataset.color = colors[idx%colors.length];
+      el.innerHTML = `<svg viewBox="0 0 100 100" fill="${colors[idx%colors.length]}"><path d="${shape.path}" ${shape.rx?`rx="${shape.rx}" ry="${shape.rx}"`:''} /></svg>`;
+      el.addEventListener('mousedown', startDrag);
+      el.addEventListener('touchstart', startDrag, {passive:false});
+      shapesDiv.appendChild(el);
+    });
+  }
+
+  function startDrag(e) {
+    e.preventDefault();
+    activeDrag = e.target.closest('.draggable');
+    if(!activeDrag) return;
+    
+    dragClone = activeDrag.cloneNode(true);
+    dragClone.classList.add('dragging-clone');
+    dragClone.style.width = activeDrag.offsetWidth + 'px';
+    dragClone.style.height = activeDrag.offsetHeight + 'px';
+    document.body.appendChild(dragClone);
+    
+    const touch = e.touches ? e.touches[0] : e;
+    const rect = activeDrag.getBoundingClientRect();
+    offsetX = touch.clientX - rect.left;
+    offsetY = touch.clientY - rect.top;
+    activeDrag.style.opacity = '0.3';
+    
+    moveDrag(touch.clientX, touch.clientY);
+    
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('touchmove', onTouchMove, {passive:false});
+    document.addEventListener('mouseup', onEnd);
+    document.addEventListener('touchend', onEnd);
+  }
+
+  function onMove(e) { moveDrag(e.clientX, e.clientY); }
+  function onTouchMove(e) { e.preventDefault(); moveDrag(e.touches[0].clientX, e.touches[0].clientY); }
+  function moveDrag(x, y) { if(dragClone) { dragClone.style.left=(x-offsetX)+'px'; dragClone.style.top=(y-offsetY)+'px'; } }
+  function onEnd(e) {
+    document.removeEventListener('mousemove', onMove);
+    document.removeEventListener('touchmove', onTouchMove);
+    document.removeEventListener('mouseup', onEnd);
+    document.removeEventListener('touchend', onEnd);
+    
+    if(!dragClone || !activeDrag) return;
+    
+    const cloneRect = dragClone.getBoundingClientRect();
+    const cx = cloneRect.left + cloneRect.width/2;
+    const cy = cloneRect.top + cloneRect.height/2;
+    
+    let matched = false;
+    document.querySelectorAll('.target-box').forEach(target => {
+      if(matched) return;
+      const tRect = target.getBoundingClientRect();
+      if(cx >= tRect.left && cx <= tRect.right && cy >= tRect.top && cy <= tRect.bottom) {
+        if(target.dataset.id === activeDrag.dataset.id) {
+          matched = true;
+          successMatch(activeDrag, target);
+        } else {
+          // خطأ: شكل غلط
+          playSound('wrong');
+          target.classList.add('wrong');
+          document.getElementById('message').textContent = '❌ غلط! حاولي مرة أخرى';
+          document.getElementById('message').className = 'message error';
+          setTimeout(() => {
+            target.classList.remove('wrong');
+            if(matchedCount < totalShapes) {
+              document.getElementById('message').textContent = 'اسحب كل شكل ولونه فوق ظله الرمادي';
+              document.getElementById('message').className = 'message';
+            }
+          }, 1000);
+        }
+      }
+    });
+    
+    if(!matched) activeDrag.style.opacity = '1';
+    dragClone.remove(); dragClone = null; activeDrag = null;
+  }
+
+  function successMatch(source, target) {
+    const svgInside = target.querySelector('svg');
+    svgInside.setAttribute('fill', source.dataset.color);
+    svgInside.style.opacity = '1';
+    target.classList.add('matched');
+    source.classList.add('hidden');
+    playSound('correct');
+    matchedCount++;
+        if(matchedCount === totalShapes) {
+      clearInterval(timerInterval);
+      document.getElementById('message').textContent = '🎉 أحسنتِ! أنهيتِ المرحلة بنجاح!';
+      document.getElementById('message').className = 'message success';
+      document.getElementById('nextBtnContainer').style.display = 'block';
+      playSound('win');
+      if(currentLevel === 6) spawnConfetti();
+    }
+  }
+
+  function nextLevel() {
+    if(currentLevel < 6) {
+      startGame(currentLevel + 1);
+    } else {
+      // انتهت كل المراحل
+      document.getElementById('message').textContent = '🏆 مبروك! ختمتِ كل المراحل بنجاح!';
+      spawnConfetti();
+      document.getElementById('nextBtnContainer').innerHTML = '<button class="btn btn-primary" onclick="backToMenu()">العودة للقائمة</button>';
+    }
+  }
+
+  function backToMenu() {
+    clearInterval(timerInterval);
+    document.getElementById('menu').style.display = 'block';
+    document.getElementById('game').style.display = 'none';
+    document.getElementById('nextBtnContainer').innerHTML = '<button class="btn btn-next" onclick="nextLevel()">المرحلة التالية ⏭️</button>';
+  }
+
+  function spawnConfetti() {
+    const colors = ['#ff7675','#74b9ff','#55efc4','#ffeaa7','#a29bfe','#fd79a8'];
+    for(let i=0; i<100; i++) {
+      const c = document.createElement('div');
+      c.className = 'confetti';
+      c.style.left = Math.random()*100 + 'vw';
+      c.style.top = '-10px';
+      c.style.background = colors[Math.floor(Math.random()*colors.length)];
+      c.style.animationDuration = (Math.random()*2+1.5) + 's';
+      document.body.appendChild(c);
+      setTimeout(() => c.remove(), 4000);
+    }
+  }
+</script>
+</body>
+</html>

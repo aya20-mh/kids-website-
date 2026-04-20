@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>نجوم التعلم — لوحة الأهل</title>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+Bhaijaan+2:wght@400;600;700;800;900&family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+:root{
+  --space-darkest:#0d0022;--space-dark:#1a0040;--space-mid:#2d006a;--space-bright:#6b21c8;
+  --yellow:#FFD700;--orange:#FF7A00;--pink:#FF3D8E;--cyan:#00D4FF;--green:#00E676;--red:#FF4757;--mint:#1DE9B6;
+  --r-full:9999px;--r-xl:32px;--r-lg:24px;--r:18px;
+}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Tajawal',sans-serif;background:var(--space-dark);color:#fff;min-height:100vh;overflow-x:hidden;}
+.space-bg{position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:radial-gradient(ellipse at 25% 25%,rgba(107,33,200,.45) 0%,transparent 55%),
+             radial-gradient(ellipse at 80% 75%,rgba(45,0,106,.7) 0%,transparent 55%),
+             linear-gradient(155deg,#0d0022 0%,#1a0040 40%,#2d006a 75%,#1a0040 100%);}
+#starsCanvas{position:fixed;inset:0;z-index:1;pointer-events:none;}
+
+/* Planets */
+.planet{position:fixed;border-radius:50%;pointer-events:none;z-index:1;animation:pfloat var(--pf,12s) ease-in-out infinite var(--pd,0s);}
+@keyframes pfloat{0%,100%{transform:translateY(0)rotate(0)}50%{transform:translateY(-14px)rotate(4deg)}}
+.p1{width:70px;height:70px;top:5%;left:-10px;
+  background:radial-gradient(circle at 38% 35%,#ffe066,#e0a000 60%,#c47a00);
+  box-shadow:0 0 28px rgba(255,200,0,.2),inset -10px -10px 20px rgba(0,0,0,.3);--pf:14s;}
+.p1::before{content:'';position:absolute;width:165%;height:28%;top:36%;left:-32%;
+  border-radius:50%;border:8px solid rgba(255,200,80,.28);transform:rotateX(74deg);}
+.p2{width:48px;height:48px;bottom:12%;right:-5px;
+  background:radial-gradient(circle at 35% 30%,#80d8ff,#0288d1 60%,#01579b);
+  box-shadow:0 0 20px rgba(2,136,209,.25);--pf:10s;--pd:-5s;}
+.p3{width:32px;height:32px;top:50%;right:3%;
+  background:radial-gradient(circle at 35% 30%,#ff80ab,#e91e63 60%,#880e4f);
+  box-shadow:0 0 14px rgba(233,30,99,.25);--pf:8s;--pd:-2s;}
+
+/* NAVBAR */
+.navbar{position:sticky;top:0;z-index:100;
+  backdrop-filter:blur(20px);background:rgba(13,0,34,.9);
+  border-bottom:1px solid rgba(255,255,255,.08);
+  padding:0 24px;height:66px;display:flex;align-items:center;gap:14px;}
+.nav-logo{font-family:'Baloo Bhaijaan 2',cursive;font-size:22px;font-weight:900;
+  display:flex;align-items:center;gap:8px;text-decoration:none;flex-shrink:0;}
+.logo-icon{font-size:26px;animation:spin-s 8s linear infinite;display:inline-block;}
+@keyframes spin-s{to{transform:rotate(360deg)}}
+.logo-text{background:linear-gradient(135deg,#FFD700,#FF7A00);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.nav-center{flex:1;display:flex;justify-content:center;}
+.nav-tab{background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.1);
+  border-radius:var(--r-full);padding:7px 16px;cursor:pointer;
+  font-family:'Baloo Bhaijaan 2',cursive;font-size:14px;font-weight:800;
+  color:rgba(255,255,255,.6);transition:all .3s;display:flex;align-items:center;gap:6px;}
+.nav-tab.active,.nav-tab:hover{background:rgba(255,215,0,.15);border-color:rgba(255,215,0,.4);color:var(--yellow);}
+.nav-acts{display:flex;gap:10px;align-items:center;}
+.parent-pill{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);
+  border-radius:var(--r-full);padding:6px 14px;font-size:14px;font-weight:700;
+  display:flex;align-items:center;gap:6px;}
+.btn-logout{background:rgba(255,71,87,.15);border:1px solid rgba(255,71,87,.3);
+  border-radius:var(--r-full);padding:7px 14px;color:#ff8091;cursor:pointer;
+  font-family:'Baloo Bhaijaan 2',cursive;font-size:13px;font-weight:800;transition:all .2s;}
+.btn-logout:hover{background:rgba(255,71,87,.3);}
+
+/* CONTENT */
+.content{position:relative;z-index:2;max-width:1000px;margin:0 auto;padding:28px 18px 60px;}
+
+/* PAGE / TAB PANELS */
+.view{display:none;animation:view-pop .4s ease;}
+.view.active{display:block;}
+@keyframes view-pop{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── OVERVIEW ── */
+.overview-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:24px;}
+.stat-card{background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.1);
+  border-radius:var(--r-xl);padding:22px 20px;position:relative;overflow:hidden;transition:all .3s;}
+.stat-card:hover{background:rgba(255,255,255,.12);transform:translateY(-4px);}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--sc-line,var(--yellow));}
+.sc-y{--sc-line:linear-gradient(90deg,var(--yellow),var(--orange));}
+.sc-p{--sc-line:linear-gradient(90deg,var(--pink),var(--space-bright));}
+.sc-c{--sc-line:linear-gradient(90deg,var(--cyan),var(--green));}
+.sc-g{--sc-line:linear-gradient(90deg,var(--green),var(--mint));}
+.stat-icon{font-size:36px;margin-bottom:10px;display:block;animation:si-float 4s ease-in-out infinite var(--si-del,0s);}
+@keyframes si-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+.stat-val{font-family:'Baloo Bhaijaan 2',cursive;font-size:30px;font-weight:900;color:var(--sv-c,var(--yellow));margin-bottom:4px;}
+.stat-lbl{font-size:13px;color:rgba(255,255,255,.55);}
+.sc-y .stat-val{--sv-c:var(--yellow);}
+.sc-p .stat-val{--sv-c:var(--pink);}
+.sc-c .stat-val{--sv-c:var(--cyan);}
+.sc-g .stat-val{--sv-c:var(--green);}
+
+/* Children cards */
+.section-title{font-family:'Baloo Bhaijaan 2',cursive;font-size:20px;font-weight:900;
+  display:flex;align-items:center;gap:10px;margin-bottom:16px;}
+.kids-overview-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin-bottom:28px;}
+.kid-overview-card{background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.1);
+  border-radius:var(--r-xl);padding:22px;transition:all .3s;position:relative;overflow:hidden;}
+.kid-overview-card:hover{background:rgba(255,255,255,.12);transform:translateY(-4px);}
+.koc-header{display:flex;align-items:center;gap:14px;margin-bottom:18px;}
+.koc-avatar-wrap{position:relative;}
+.koc-avatar{width:58px;height:58px;border-radius:18px;
+  background:linear-gradient(135deg,var(--kav-c1,#FFD700),var(--kav-c2,#FF7A00));
+  display:flex;align-items:center;justify-content:center;font-size:30px;flex-shrink:0;
+  box-shadow:0 6px 16px rgba(0,0,0,.3);}
+.koc-level{position:absolute;bottom:-4px;right:-4px;width:20px;height:20px;border-radius:50%;
+  background:var(--space-bright);color:#fff;font-family:'Baloo Bhaijaan 2',cursive;
+  font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;border:2px solid #1a0040;}
+.koc-name{font-family:'Baloo Bhaijaan 2',cursive;font-size:17px;font-weight:900;}
+.koc-age{font-size:12px;color:rgba(255,255,255,.5);margin-top:2px;}
+.koc-stars-badge{margin-right:auto;background:rgba(255,215,0,.15);border:1px solid rgba(255,215,0,.3);
+  border-radius:var(--r-full);padding:4px 12px;font-family:'Baloo Bhaijaan 2',cursive;
+  font-size:13px;font-weight:800;color:var(--yellow);}
+
+/* Progress bars in kid card */
+.koc-prog-list{display:flex;flex-direction:column;gap:8px;}
+.kp-item{display:flex;align-items:center;gap:10px;}
+.kp-emoji{font-size:16px;flex-shrink:0;}
+.kp-bar-wrap{flex:1;height:7px;background:rgba(255,255,255,.1);border-radius:4px;overflow:hidden;}
+.kp-bar-fill{height:100%;border-radius:4px;transition:width 1.2s ease;}
+.kp-pct{font-family:'Baloo Bhaijaan 2',cursive;font-size:12px;font-weight:800;flex-shrink:0;min-width:34px;}
+
+.koc-footer{display:flex;gap:8px;margin-top:16px;}
+.koc-btn{flex:1;padding:10px;border-radius:var(--r-full);border:none;cursor:pointer;
+  font-family:'Baloo Bhaijaan 2',cursive;font-size:13px;font-weight:800;transition:all .2s;}
+.koc-btn-view{background:rgba(255,215,0,.15);color:var(--yellow);border:1px solid rgba(255,215,0,.3);}
+.koc-btn-view:hover{background:rgba(255,215,0,.25);}
+.koc-btn-del{background:rgba(255,71,87,.12);color:#ff8091;border:1px solid rgba(255,71,87,.25);}
+.koc-btn-del:hover{background:rgba(255,71,87,.25);}
+
+/* Empty state */
+.empty-state{text-align:center;padding:50px 20px;}
+.empty-state .empty-emoji{font-size:80px;display:block;margin-bottom:16px;animation:si-float 3s ease-in-out infinite;}
+.empty-state h3{font-family:'Baloo Bhaijaan 2',cursive;font-size:22px;font-weight:900;margin-bottom:8px;}
+.empty-state p{font-size:14px;color:rgba(255,255,255,.55);margin-bottom:24px;}
+
+/* ── ADD CHILD FORM ── */
+.add-child-card{background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.12);
+  border-radius:var(--r-xl);padding:28px;max-width:520px;margin:0 auto;}
+.add-title{font-family:'Baloo Bhaijaan 2',cursive;font-size:20px;font-weight:900;
+  text-align:center;margin-bottom:22px;}
+.field-group{margin-bottom:16px;}
+.field-label{font-size:13px;font-weight:700;color:rgba(255,255,255,.65);display:block;margin-bottom:7px;}
+.field-input{width:100%;padding:13px 16px;background:rgba(255,255,255,.09);
+  border:1.5px solid rgba(255,255,255,.18);border-radius:var(--r);color:#fff;
+  font-family:'Tajawal',sans-serif;font-size:15px;outline:none;transition:all .3s;}
+.field-input::placeholder{color:rgba(255,255,255,.3);}
+.field-input:focus{border-color:var(--yellow);background:rgba(255,215,0,.07);box-shadow:0 0 0 4px rgba(255,215,0,.1);}
+select.field-input option{background:#2d006a;color:#fff;}
+
+/* Avatar grid */
+.av-grid{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;}
+.av-opt{width:52px;height:52px;border-radius:15px;background:rgba(255,255,255,.08);
+  border:2px solid rgba(255,255,255,.15);font-size:26px;
+  display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .3s;}
+.av-opt:hover{background:rgba(255,215,0,.12);border-color:rgba(255,215,0,.4);transform:scale(1.08);}
+.av-opt.sel{background:rgba(255,215,0,.2);border-color:var(--yellow);box-shadow:0 0 12px rgba(255,215,0,.3);transform:scale(1.12);}
+
+/* PIN */
+.pin-row{display:flex;gap:10px;justify-content:center;margin:8px 0;}
+.pin-box{width:58px;height:64px;border-radius:16px;background:rgba(255,255,255,.09);
+  border:2px solid rgba(255,255,255,.18);text-align:center;font-size:28px;font-weight:900;
+  color:var(--yellow);font-family:'Baloo Bhaijaan 2',cursive;outline:none;transition:all .3s;caret-color:var(--yellow);}
+.pin-box:focus{border-color:var(--yellow);background:rgba(255,215,0,.1);box-shadow:0 0 0 4px rgba(255,215,0,.15);transform:scale(1.06);}
+
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;
+  border:none;border-radius:var(--r-full);cursor:pointer;
+  font-family:'Baloo Bhaijaan 2',cursive;font-weight:800;transition:all .2s cubic-bezier(.34,1.56,.64,1);}
+.btn:hover{transform:translateY(-2px);}
+.btn-full{width:100%;padding:14px;font-size:16px;}
+.btn-yellow{background:var(--yellow);color:#1a1a2e;box-shadow:0 6px 0 #c49a00;}
+.btn-yellow:hover{box-shadow:0 9px 0 #c49a00;}
+.btn-orange{background:var(--orange);color:#fff;box-shadow:0 6px 0 #b05a00;}
+.btn-orange:hover{box-shadow:0 9px 0 #b05a00;}
+
+.alert{border-radius:var(--r);padding:11px 14px;font-size:13px;font-weight:700;
+  display:none;align-items:center;gap:8px;margin-bottom:14px;}
+.alert.show{display:flex;}
+.alert-err{background:rgba(255,71,87,.14);border:1px solid rgba(255,71,87,.3);color:#ff8091;}
+.alert-ok{background:rgba(0,230,118,.14);border:1px solid rgba(0,230,118,.3);color:#69f0ae;}
+
+/* ── DETAILED CHILD VIEW ── */
+.child-detail-header{display:flex;align-items:center;gap:16px;
+  background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.1);
+  border-radius:var(--r-xl);padding:24px;margin-bottom:20px;}
+.cdh-avatar{width:72px;height:72px;border-radius:22px;
+  background:linear-gradient(135deg,var(--yellow),var(--orange));
+  display:flex;align-items:center;justify-content:center;font-size:38px;
+  box-shadow:0 8px 24px rgba(0,0,0,.3);}
+.cdh-name{font-family:'Baloo Bhaijaan 2',cursive;font-size:22px;font-weight:900;}
+.cdh-info{font-size:13px;color:rgba(255,255,255,.55);margin-top:4px;}
+.cdh-stars{margin-right:auto;text-align:center;}
+.cdh-stars-num{font-family:'Baloo Bhaijaan 2',cursive;font-size:32px;font-weight:900;color:var(--yellow);}
+.cdh-stars-lbl{font-size:12px;color:rgba(255,255,255,.5);}
+
+.detail-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;}
+.detail-card{background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.1);
+  border-radius:var(--r-xl);padding:20px;}
+.dc-title{font-family:'Baloo Bhaijaan 2',cursive;font-size:16px;font-weight:800;
+  display:flex;align-items:center;gap:8px;margin-bottom:16px;}
+.progress-list{display:flex;flex-direction:column;gap:12px;}
+.prog-item{display:flex;align-items:center;gap:12px;}
+.prog-icon{font-size:22px;flex-shrink:0;}
+.prog-body{flex:1;}
+.prog-name{font-family:'Baloo Bhaijaan 2',cursive;font-size:14px;font-weight:800;margin-bottom:4px;}
+.prog-bar{height:8px;background:rgba(255,255,255,.1);border-radius:4px;overflow:hidden;}
+.prog-bar-fill{height:100%;border-radius:4px;transition:width 1.2s ease;}
+.prog-nums{font-size:11px;color:rgba(255,255,255,.5);margin-top:3px;}
+
+.btn-back-sm{display:flex;align-items:center;gap:8px;
+  background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);
+  border-radius:var(--r-full);padding:8px 16px;color:rgba(255,255,255,.7);cursor:pointer;
+  font-family:'Baloo Bhaijaan 2',cursive;font-size:14px;font-weight:700;
+  transition:all .2s;margin-bottom:18px;}
+.btn-back-sm:hover{background:rgba(255,255,255,.15);color:#fff;}
+
+/* TOAST */
+.toast-bar{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
+  background:linear-gradient(135deg,#1a0040,#2d006a);
+  border:1.5px solid rgba(255,255,255,.15);border-radius:var(--r-full);
+  padding:13px 28px;font-family:'Baloo Bhaijaan 2',cursive;font-size:15px;font-weight:700;color:#fff;
+  box-shadow:0 12px 40px rgba(0,0,0,.4);white-space:nowrap;pointer-events:none;z-index:5000;
+  animation:toast-in .35s ease,toast-out .35s ease 2.3s forwards;}
+@keyframes toast-in{from{opacity:0;transform:translate(-50%,18px)}to{opacity:1;transform:translate(-50%,0)}}
+@keyframes toast-out{to{opacity:0;transform:translate(-50%,-12px)}}
+</style>
+</head>
+<body>
+<div class="space-bg"></div>
+<canvas id="starsCanvas"></canvas>
+<div class="planet p1"></div>
+<div class="planet p2"></div>
+<div class="planet p3"></div>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+  <a href="home.html" class="nav-logo"><span class="logo-icon">⭐</span><span class="logo-text">نجوم التعلم</span></a>
+  <div class="nav-center" style="display:flex;gap:8px;">
+    <button class="nav-tab active" onclick="gotoView('overview',this)">🏠 نظرة عامة</button>
+    <button class="nav-tab"        onclick="gotoView('addChild',this)">➕ إضافة طفل</button>
+  </div>
+  <div class="nav-acts">
+    <div class="parent-pill">👤 <span id="parentName">ولي الأمر</span></div>
+    <button class="btn-logout" onclick="doLogout()"><i class="fas fa-sign-out-alt"></i> خروج</button>
+  </div>
+</nav>
+
+<!-- CONTENT -->
+<div class="content">
+
+  <!-- ▓ OVERVIEW VIEW ▓ -->
+  <div class="view active" id="view-overview">
+
+    <!-- Stats row -->
+    <div class="overview-grid">
+      <div class="stat-card sc-y"><span class="stat-icon">👶</span><div class="stat-val" id="sv-kids">٠</div><div class="stat-lbl">أطفال مسجلون</div></div>
+      <div class="stat-card sc-p" style="--si-del:-.5s"><span class="stat-icon">⭐</span><div class="stat-val" id="sv-stars">٠</div><div class="stat-lbl">إجمالي النجوم</div></div>
+      <div class="stat-card sc-c" style="--si-del:-1s"><span class="stat-icon">📖</span><div class="stat-val" id="sv-lessons">٠</div><div class="stat-lbl">دروس مكتملة</div></div>
+      <div class="stat-card sc-g" style="--si-del:-1.5s"><span class="stat-icon">🏆</span><div class="stat-val" id="sv-quizzes">٠</div><div class="stat-lbl">اختبارات</div></div>
+    </div>
+
+    <!-- Kids list -->
+    <div class="section-title">👧 أطفالي <span style="font-size:14px;color:rgba(255,255,255,.4);font-weight:500;" id="kidsCount"></span></div>
+    <div id="kidsGrid"></div>
+  </div>
+
+  <!-- ▓ ADD CHILD VIEW ▓ -->
+  <div class="view" id="view-addChild">
+    <div class="add-child-card">
+      <div class="add-title">👶 إضافة طفل جديد</div>
+      <div class="alert alert-err" id="addErr"><i class="fas fa-exclamation-circle"></i><span id="addErrTxt"></span></div>
+      <div class="alert alert-ok"  id="addOk"><i class="fas fa-check-circle"></i><span id="addOkTxt"></span></div>
+
+      <div class="field-group">
+        <label class="field-label">👤 اسم الطفل</label>
+        <input type="text" id="addName" class="field-input" placeholder="مثال: نور">
+      </div>
+      <div class="field-group">
+        <label class="field-label">🎂 العمر</label>
+        <select id="addAge" class="field-input">
+          <option value="">اختر العمر</option>
+          <option value="3">٣ سنوات</option><option value="4">٤ سنوات</option>
+          <option value="5">٥ سنوات</option><option value="6">٦ سنوات</option>
+          <option value="7">٧ سنوات</option><option value="8">٨ سنوات</option>
+        </select>
+      </div>
+      <div class="field-group">
+        <label class="field-label">🎨 اختر أفاتار</label>
+        <div class="av-grid" id="avGrid"></div>
+        <input type="hidden" id="addAvatar" value="🦁">
+      </div>
+      <div class="field-group">
+        <label class="field-label">🔢 الرمز السري (٤ أرقام)</label>
+        <div class="pin-row">
+          <input type="password" inputmode="numeric" maxlength="1" class="pin-box" id="ap0" oninput="pinM(this,1)" onkeydown="pinK(event,0)">
+          <input type="password" inputmode="numeric" maxlength="1" class="pin-box" id="ap1" oninput="pinM(this,2)" onkeydown="pinK(event,1)">
+          <input type="password" inputmode="numeric" maxlength="1" class="pin-box" id="ap2" oninput="pinM(this,3)" onkeydown="pinK(event,2)">
+          <input type="password" inputmode="numeric" maxlength="1" class="pin-box" id="ap3" onkeydown="pinK(event,3)">
+        </div>
+      </div>
+      <button class="btn btn-full btn-yellow" onclick="doAddChild()">✨ إضافة الطفل</button>
+    </div>
+  </div>
+
+  <!-- ▓ CHILD DETAIL VIEW ▓ -->
+  <div class="view" id="view-childDetail">
+    <button class="btn-back-sm" onclick="gotoView('overview')"><i class="fas fa-arrow-right"></i> رجوع</button>
+    <div class="child-detail-header" id="detailHeader"></div>
+    <div class="detail-grid" id="detailGrid"></div>
+  </div>
+
+</div>
+
+<script>
+/* STARS */
+(function(){
+  const c=document.getElementById('starsCanvas'),ctx=c.getContext('2d');
+  let W,H,stars=[];
+  function resize(){W=c.width=innerWidth;H=c.height=innerHeight;}
+  resize();window.addEventListener('resize',resize);
+  for(let i=0;i<130;i++) stars.push({x:Math.random()*9999,y:Math.random()*9999,r:Math.random()*1.5+.3,a:Math.random(),da:(Math.random()*.007+.002)*(Math.random()<.5?1:-1)});
+  function draw(){ctx.clearRect(0,0,W,H);stars.forEach(s=>{s.a+=s.da;if(s.a<=0||s.a>=1)s.da*=-1;ctx.globalAlpha=Math.max(0,Math.min(1,s.a));ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(s.x%W,s.y%H,s.r,0,Math.PI*2);ctx.fill();});ctx.globalAlpha=1;requestAnimationFrame(draw);}
+  draw();
+})();
+
+const AVATARS=['🦁','🐯','🐻','🐼','🦊','🐸','🐧','🦄','🐙','🦋','🚀','⭐'];
+const AV_COLORS=[['#FFD700','#FF7A00'],['#FF7A00','#FF3D8E'],['#A855F7','#5352ED'],['#00C853','#1DE9B6'],['#FF3D8E','#A855F7'],['#00D4FF','#00E676']];
+
+let parentData={},currentKidId=null;
+
+/* INIT */
+window.addEventListener('DOMContentLoaded',()=>{
+  const s=safeJSON('kidsAppSession');
+  if(!s||s.type!=='parent'){location.href='login.html';return;}
+  parentData=s;
+  document.getElementById('parentName').textContent=s.name;
+  buildAvatarGrid();
+  renderOverview();
+});
+
+function buildAvatarGrid(){
+  const g=document.getElementById('avGrid');g.innerHTML='';
+  AVATARS.forEach(a=>{
+    const d=document.createElement('div');d.className='av-opt';
+    d.textContent=a;
+    if(a==='🦁')d.classList.add('sel');
+    d.onclick=()=>{document.querySelectorAll('.av-opt').forEach(x=>x.classList.remove('sel'));d.classList.add('sel');document.getElementById('addAvatar').value=a;};
+    g.appendChild(d);
+  });
+}
+
+function renderOverview(){
+  const acc=safeJSON('kidsAppAccounts')||{parents:[],children:[]};
+  const myKids=acc.children.filter(c=>c.parentId===parentData.id);
+  // Stats
+  const totalStars=myKids.reduce((s,k)=>s+(k.stars||0),0);
+  const totalLessons=myKids.reduce((s,k)=>s+((k.progress?.arabic?.length||0)+(k.progress?.english?.length||0)),0);
+  const totalQuizzes=myKids.reduce((s,k)=>s+(k.progress?.quizzes||0),0);
+  document.getElementById('sv-kids').textContent=toAr(myKids.length);
+  document.getElementById('sv-stars').textContent=toAr(totalStars);
+  document.getElementById('sv-lessons').textContent=toAr(totalLessons);
+  document.getElementById('sv-quizzes').textContent=toAr(totalQuizzes);
+  document.getElementById('kidsCount').textContent=myKids.length?`(${myKids.length})`:'';
+
+  const grid=document.getElementById('kidsGrid');grid.innerHTML='';
+  if(!myKids.length){
+    grid.innerHTML=`<div class="empty-state"><span class="empty-emoji">🌙</span><h3>لا يوجد أطفال بعد!</h3><p>أضف طفلك الأول وابدأ رحلة التعلم</p><button class="btn btn-yellow" style="padding:13px 30px;font-size:15px;" onclick="gotoView('addChild')">➕ إضافة طفل</button></div>`;
+    return;
+  }
+  const g2=document.createElement('div');g2.className='kids-overview-grid';
+  myKids.forEach((kid,idx)=>{
+    const prog=kid.progress||{arabic:[],english:[],quizzes:0};
+    const arPct=Math.round((prog.arabic?.length||0)/28*100);
+    const enPct=Math.round((prog.english?.length||0)/26*100);
+    const colors=AV_COLORS[idx%AV_COLORS.length];
+    const card=document.createElement('div');card.className='kid-overview-card';
+    card.innerHTML=`
+      <div class="koc-header">
+        <div class="koc-avatar-wrap">
+          <div class="koc-avatar" style="background:linear-gradient(135deg,${colors[0]},${colors[1]})">${kid.avatar||'🦁'}</div>
+          <div class="koc-level">${Math.max(1,Math.floor((kid.stars||0)/20)+1)}</div>
+        </div>
+        <div><div class="koc-name">${kid.name}</div><div class="koc-age">المستوى ${Math.max(1,Math.floor((kid.stars||0)/20)+1)} • ${kid.age||4} سنوات</div></div>
+        <div class="koc-stars-badge">⭐ ${kid.stars||0}</div>
+      </div>
+      <div class="koc-prog-list">
+        <div class="kp-item"><span class="kp-emoji">🔤</span><div class="kp-bar-wrap"><div class="kp-bar-fill" style="width:${arPct}%;background:linear-gradient(90deg,#FF6B9D,#A855F7)"></div></div><span class="kp-pct" style="color:#FF6B9D">${arPct}%</span></div>
+        <div class="kp-item"><span class="kp-emoji">🔡</span><div class="kp-bar-wrap"><div class="kp-bar-fill" style="width:${enPct}%;background:linear-gradient(90deg,#1E90FF,#00D4FF)"></div></div><span class="kp-pct" style="color:#1E90FF">${enPct}%</span></div>
+        <div class="kp-item"><span class="kp-emoji">🧠</span><div class="kp-bar-wrap"><div class="kp-bar-fill" style="width:${Math.min(100,(prog.quizzes||0)*10)}%;background:linear-gradient(90deg,#FFD700,#FF7A00)"></div></div><span class="kp-pct" style="color:#FFD700">${prog.quizzes||0} 🏆</span></div>
+      </div>
+      <div class="koc-footer">
+        <button class="koc-btn koc-btn-view" onclick="viewChild('${kid.id}')">📊 التفاصيل</button>
+        <button class="koc-btn koc-btn-del" onclick="deleteChild('${kid.id}','${kid.name}')">🗑️ حذف</button>
+      </div>`;
+    g2.appendChild(card);
+  });
+  grid.appendChild(g2);
+}
+
+function viewChild(id){
+  const acc=safeJSON('kidsAppAccounts')||{parents:[],children:[]};
+  const kid=acc.children.find(c=>c.id===id);
+  if(!kid)return;
+  currentKidId=id;
+  const prog=kid.progress||{arabic:[],english:[],quizzes:0};
+  const colors=AV_COLORS[acc.children.indexOf(kid)%AV_COLORS.length];
+  document.getElementById('detailHeader').innerHTML=`
+    <div class="cdh-avatar" style="background:linear-gradient(135deg,${colors[0]},${colors[1]})">${kid.avatar||'🦁'}</div>
+    <div><div class="cdh-name">${kid.name}</div><div class="cdh-info">العمر: ${kid.age||4} سنوات • المستوى ${Math.max(1,Math.floor((kid.stars||0)/20)+1)}</div></div>
+    <div class="cdh-stars"><div class="cdh-stars-num">⭐ ${kid.stars||0}</div><div class="cdh-stars-lbl">نجمة</div></div>`;
+  const arLen=prog.arabic?.length||0, enLen=prog.english?.length||0;
+  document.getElementById('detailGrid').innerHTML=`
+    <div class="detail-card">
+      <div class="dc-title">📚 تقدم الدروس</div>
+      <div class="progress-list">
+        <div class="prog-item"><span class="prog-icon">🔤</span><div class="prog-body"><div class="prog-name">الحروف العربية</div><div class="prog-bar"><div class="prog-bar-fill" style="width:${Math.round(arLen/28*100)}%;background:linear-gradient(90deg,#FF6B9D,#A855F7)"></div></div><div class="prog-nums">${arLen} / 28 حرفاً</div></div></div>
+        <div class="prog-item"><span class="prog-icon">🔡</span><div class="prog-body"><div class="prog-name">الحروف الإنجليزية</div><div class="prog-bar"><div class="prog-bar-fill" style="width:${Math.round(enLen/26*100)}%;background:linear-gradient(90deg,#1E90FF,#00D4FF)"></div></div><div class="prog-nums">${enLen} / 26 حرفاً</div></div></div>
+      </div>
+    </div>
+    <div class="detail-card">
+      <div class="dc-title">🏆 الإنجازات</div>
+      <div class="progress-list">
+        <div class="prog-item"><span class="prog-icon">⭐</span><div class="prog-body"><div class="prog-name">إجمالي النجوم</div><div class="prog-bar"><div class="prog-bar-fill" style="width:${Math.min(100,(kid.stars||0)/50*100)}%;background:linear-gradient(90deg,#FFD700,#FF7A00)"></div></div><div class="prog-nums">${kid.stars||0} / 50</div></div></div>
+        <div class="prog-item"><span class="prog-icon">🧠</span><div class="prog-body"><div class="prog-name">الاختبارات المكتملة</div><div class="prog-bar"><div class="prog-bar-fill" style="width:${Math.min(100,(prog.quizzes||0)*10)}%;background:linear-gradient(90deg,#A855F7,#5352ED)"></div></div><div class="prog-nums">${prog.quizzes||0} اختبار</div></div></div>
+      </div>
+    </div>`;
+  gotoView('childDetail');
+}
+
+function deleteChild(id,name){
+  if(!confirm(`هل تريد حذف حساب "${name}"؟ لا يمكن التراجع عن هذا.`))return;
+  const acc=safeJSON('kidsAppAccounts')||{parents:[],children:[]};
+  acc.children=acc.children.filter(c=>c.id!==id);
+  localStorage.setItem('kidsAppAccounts',JSON.stringify(acc));
+  toast('🗑️ تم حذف حساب '+name);
+  renderOverview();
+}
+
+function doAddChild(){
+  clearAlerts();
+  const name=v('addName').trim(),age=v('addAge'),avatar=v('addAvatar');
+  const pin=[v2('ap0'),v2('ap1'),v2('ap2'),v2('ap3')].join('');
+  if(!name){showErr('addErr','addErrTxt','👤 يرجى إدخال اسم الطفل');return;}
+  if(!age) {showErr('addErr','addErrTxt','🎂 يرجى اختيار العمر');return;}
+  if(pin.length<4){showErr('addErr','addErrTxt','🔢 يرجى إدخال رمز سري مكون من ٤ أرقام');return;}
+  const acc=safeJSON('kidsAppAccounts')||{parents:[],children:[]};
+  if(acc.children.find(c=>c.parentId===parentData.id&&c.name===name)){
+    showErr('addErr','addErrTxt','👤 يوجد طفل بهذا الاسم مسبقاً');return;
+  }
+  const newKid={id:'kid_'+Date.now(),parentId:parentData.id,name,age:parseInt(age),avatar,pin,stars:0,progress:{arabic:[],english:[],quizzes:0}};
+  acc.children.push(newKid);
+  localStorage.setItem('kidsAppAccounts',JSON.stringify(acc));
+  showSuccess('addOk','addOkTxt','🎉 تم إضافة '+name+' بنجاح!');
+  toast('✨ مرحباً '+name+'!');
+  document.getElementById('addName').value='';document.getElementById('addAge').value='';
+  ['ap0','ap1','ap2','ap3'].forEach(id=>document.getElementById(id).value='');
+  setTimeout(()=>{gotoView('overview');renderOverview();},1400);
+}
+
+/* ── VIEW SWITCHING ── */
+function gotoView(viewId,btn){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById('view-'+viewId).classList.add('active');
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  if(btn)btn.classList.add('active');
+  if(viewId==='overview')renderOverview();
+}
+
+/* ── UTILS ── */
+function toAr(n){return n.toString().replace(/[0-9]/g,d=>'٠١٢٣٤٥٦٧٨٩'[d]);}
+function v(id){return document.getElementById(id)?.value||'';}
+function v2(id){return document.getElementById(id)?.value||'';}
+function pinM(el,n){if(el.value.length===1&&n<=3)document.getElementById('ap'+n).focus();}
+function pinK(e,i){if(e.key==='Backspace'&&!document.getElementById('ap'+i).value&&i>0)document.getElementById('ap'+(i-1)).focus();}
+function showErr(aid,tid,msg){const a=document.getElementById(aid);document.getElementById(tid).textContent=msg;a.classList.add('show');}
+function showSuccess(aid,tid,msg){const a=document.getElementById(aid);document.getElementById(tid).textContent=msg;a.classList.add('show');}
+function clearAlerts(){document.querySelectorAll('.alert').forEach(a=>a.classList.remove('show'));}
+function safeJSON(k){try{return JSON.parse(localStorage.getItem(k));}catch{return null;}}
+function toast(msg){document.querySelectorAll('.toast-bar').forEach(t=>t.remove());const t=document.createElement('div');t.className='toast-bar';t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),2800);}
+function doLogout(){localStorage.removeItem('kidsAppSession');location.href='login.html';}
+</script>
+</body>
+</html>
